@@ -61,7 +61,7 @@ class sample {
     IvParameterSpec ips = new IvParameterSpec(iv);
 
     SecretKey aesKey = new SecretKeySpec(key, "AES");
-    Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
     cipher.init(Cipher.DECRYPT_MODE, aesKey, ips);
 
     byte[] raw_ciphertext = base64_url_decode((String) envelope.get("payload"));
