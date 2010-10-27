@@ -7,19 +7,44 @@ function base64_url_encode($input) {
   return $str;
 }
 
-function generate_signed_request($data, $secret, $encrypt=false) {
-  // wrap data inside payload if we are encrypting
-  if ($encrypt) {
+function pkcs5_pad($input, $blocksize) {
+  $pad = $block - (strlen($intput) % $blocksize);
+  return $input . str_repeat(chr($pad), $pad);
+}
+
+function encrypt_data($data, $secret) {
+  $data = json_encode($data);
+  if (function_exists('openssl_cipher_iv_length')) {
+    $mode = 'aes-256-cbc';
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($mode));
+    $ed = openssl_encrypt(
+      $data,
+      $mode,
+      $secret,
+      true,
+      $iv);
+  } else {
     $cipher = MCRYPT_RIJNDAEL_128;
     $mode = MCRYPT_MODE_CBC;
 
+    $data = pkcs5_pad($data, mcrypt_get_block_size($cipher, $mode));
+
     $iv = mcrypt_create_iv(
       mcrypt_get_iv_size($cipher, $mode), MCRYPT_DEV_URANDOM);
-    $data = array(
-      'payload' => base64_url_encode(mcrypt_encrypt(
-        $cipher, $secret, json_encode($data), $mode, $iv)),
-      'iv' => base64_url_encode($iv),
-    );
+    $ed = mcrypt_encrypt(
+      $cipher, $secret, $data, $mode, $iv);
+  }
+  
+  return array(
+    'payload' => base64_url_encode($ed),
+    'iv' => base64_url_encode($iv),
+  );
+}
+
+function generate_signed_request($data, $secret, $encrypt=false) {
+  // wrap data inside payload if we are encrypting
+  if ($encrypt) {
+    $data = encrypt_data($data, $secret);
   }
 
   // always present, and always at the top level

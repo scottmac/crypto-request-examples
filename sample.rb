@@ -34,7 +34,6 @@ def parse_signed_request(input, secret, max_age=3600)
   cipher.decrypt
   cipher.key = secret
   cipher.iv = base64_url_decode(envelope['iv'])
-  cipher.padding = 0
   decrypted_data = cipher.update(base64_url_decode(envelope['payload']))
   decrypted_data << cipher.final
   return JSON.parse(decrypted_data.strip)
