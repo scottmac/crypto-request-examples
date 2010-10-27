@@ -1,6 +1,17 @@
 #!/usr/bin/env python
 
-from Crypto.Cipher import AES
+try:
+    from Crypto.Cipher import AES
+    have_pycrypto = True
+except ImportError:
+    have_pycrypto = False
+
+try:
+    from M2Crypto import EVP
+    have_m2crypto = True
+except ImportError:
+    have_m2crypto = False
+
 import base64
 import hashlib
 import hmac
@@ -34,8 +45,22 @@ def parse_signed_request(input, secret, max_age=3600):
         return envelope
 
     # otherwise, decrypt the payload
-    cipher = AES.new(secret, AES.MODE_CBC, base64_url_decode(envelope['iv']))
-    decrypted = cipher.decrypt(base64_url_decode(envelope['payload']))
+    if have_pycrypto:
+        cipher = AES.new(secret, AES.MODE_CBC, base64_url_decode(envelope['iv']))
+        decrypted = cipher.decrypt(base64_url_decode(envelope['payload']))
+
+        # pycrypto doesn't strip PKCS5 padding, M2Crypto will though
+        pad = ord(decrypted[-1])
+        decrypted = decrypted[:-pad]
+
+    elif have_m2crypto:
+        c = EVP.Cipher("aes_256_cbc", secret, base64_url_decode(envelope['iv']), 0)
+        decrypted = c.update(base64_url_decode(envelope['payload']))
+        try:
+            decrypted += c.final()
+        except:
+            pass
+
     return json.loads(decrypted.strip('\0'))
 
 # process from stdin
