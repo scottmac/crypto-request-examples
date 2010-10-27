@@ -8,7 +8,7 @@ function base64_url_encode($input) {
 }
 
 function pkcs5_pad($input, $blocksize) {
-  $pad = $block - (strlen($intput) % $blocksize);
+  $pad = $blocksize - (strlen($input) % $blocksize);
   return $input . str_repeat(chr($pad), $pad);
 }
 

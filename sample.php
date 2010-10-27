@@ -6,7 +6,7 @@ function base64_url_decode($input) {
 }
 
 function pkcs5_unpad($input) {
-  $pad = ord($input[strlen($intput)-1]);
+  $pad = ord($input[strlen($input)-1]);
   if ($pad > strlen($input)) {
     return $input;
   }
